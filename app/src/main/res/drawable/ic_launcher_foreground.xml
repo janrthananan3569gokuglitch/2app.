@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Layer 1: Ambient Neon Cyberpunk Glow -->
+    <path
+        android:pathData="M54,54m-38,0a38,38 0 1,1 76,0a38,38 0 1,1 -76,0">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:centerX="54"
+                android:centerY="54"
+                android:gradientRadius="38"
+                android:type="radial">
+                <item android:color="#4000E5FF" android:offset="0.0" />
+                <item android:color="#20FF0055" android:offset="0.65" />
+                <item android:color="#00000000" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Layer 2: Precision Vault Outer Ring -->
+    <path
+        android:pathData="M54,22 C36.33,22 22,36.33 22,54 C22,71.67 36.33,86 54,86 C71.67,86 86,71.67 86,54 C86,36.33 71.67,22 54,22 Z"
+        android:strokeWidth="2.8"
+        android:strokeColor="#00E5FF"
+        android:fillColor="#0D1526" />
+
+    <!-- Layer 3: Vault Combination Dial Notches & Marks -->
+    <path
+        android:pathData="M54,16 L54,22 M54,86 L54,92 M16,54 L22,54 M86,54 L92,54 M27.1,27.1 L31.4,31.4 M76.6,76.6 L80.9,80.9 M27.1,80.9 L31.4,76.6 M76.6,31.4 L80.9,27.1"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:strokeColor="#FFB300" />
+
+    <!-- Layer 4: Beveled Inner Shield Core Plate -->
+    <path
+        android:pathData="M54,30 C40.75,30 30,40.75 30,54 C30,67.25 40.75,78 54,78 C67.25,78 78,67.25 78,54 C78,40.75 67.25,30 54,30 Z"
+        android:fillColor="#060A14"
+        android:strokeWidth="1.2"
+        android:strokeColor="#1F3354" />
+
+    <!-- Layer 5: High-Tech Audio Waveform & Equalizer Bars inside Vault -->
+    <!-- Bar 1 (Left Low) -->
+    <path
+        android:pathData="M37,59 L37,49"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:strokeColor="#00E5FF" />
+
+    <!-- Bar 2 (Low Mid) -->
+    <path
+        android:pathData="M42,64 L42,44"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:strokeColor="#00E5FF" />
+
+    <!-- Bar 3 (Mid Peak) -->
+    <path
+        android:pathData="M47,68 L47,40"
+        android:strokeWidth="2.8"
+        android:strokeLineCap="round"
+        android:strokeColor="#FFB300" />
+
+    <!-- Bar 4 (Center Music Spindle Note) -->
+    <path
+        android:pathData="M52,70 L52,38"
+        android:strokeWidth="3.2"
+        android:strokeLineCap="round"
+        android:strokeColor="#FF0055" />
+
+    <!-- Bar 5 (High Mid) -->
+    <path
+        android:pathData="M57,67 L57,41"
+        android:strokeWidth="2.8"
+        android:strokeLineCap="round"
+        android:strokeColor="#FFB300" />
+
+    <!-- Bar 6 (Treble) -->
+    <path
+        android:pathData="M62,63 L62,45"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:strokeColor="#00E5FF" />
+
+    <!-- Bar 7 (Air Spark) -->
+    <path
+        android:pathData="M67,58 L67,50"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:strokeColor="#00E5FF" />
+
+    <!-- Layer 6: Center Holographic Core Keyhole & Specular Highlight -->
+    <path
+        android:pathData="M52,54m-3.5,0a3.5,3.5 0 1,1 7,0a3.5,3.5 0 1,1 -7,0"
+        android:fillColor="#FFFFFF" />
+
+    <path
+        android:pathData="M52,48 L55,42 L57,48 Z"
+        android:fillColor="#00E5FF" />
+
+    <!-- Layer 7: Specular Diagonal Sheen -->
+    <path
+        android:pathData="M34,34 L48,24 L74,50 L60,60 Z"
+        android:fillColor="#08FFFFFF" />
+</vector>

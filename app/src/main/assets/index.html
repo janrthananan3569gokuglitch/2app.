@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>XP Music Vault Ultra - Fluid Morphing Visualizer</title>
+  <style>
+    /* =========================================================================
+     * 1. CSS @property DECLARATIONS FOR HARDWARE-ACCELERATED COLOR MORPHING
+     * ========================================================================= */
+    @property --palette-peak {
+      syntax: '<color>';
+      inherits: true;
+      initial-value: #ff0055;
+    }
+    @property --palette-mid {
+      syntax: '<color>';
+      inherits: true;
+      initial-value: #ffb300;
+    }
+    @property --palette-base {
+      syntax: '<color>';
+      inherits: true;
+      initial-value: #00e5ff;
+    }
+    @property --palette-glow {
+      syntax: '<color>';
+      inherits: true;
+      initial-value: rgba(0, 229, 255, 0.45);
+    }
+    @property --palette-rim {
+      syntax: '<color>';
+      inherits: true;
+      initial-value: #00ffff;
+    }
+
+    :root {
+      --bg-dark: #06090f;
+      --surface-dark: #0d1424;
+      --surface-variant: #151f36;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+
+      /* Initial Active Palette */
+      --palette-peak: #ff0055;
+      --palette-mid: #ffb300;
+      --palette-base: #00e5ff;
+      --palette-glow: rgba(0, 229, 255, 0.45);
+      --palette-rim: #00ffff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { background: var(--bg-dark); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow-x: hidden; }
+
+    /* =========================================================================
+     * 2. FLUID CSS-BASED MORPHING ANIMATIONS & PALETTE PRESETS
+     * ========================================================================= */
+    /* Transition applied directly to custom color properties */
+    .morphing-visualizer-container {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      transition: --palette-peak 1.25s cubic-bezier(0.25, 1, 0.5, 1),
+                  --palette-mid 1.25s cubic-bezier(0.25, 1, 0.5, 1),
+                  --palette-base 1.25s cubic-bezier(0.25, 1, 0.5, 1),
+                  --palette-glow 1.25s cubic-bezier(0.25, 1, 0.5, 1),
+                  --palette-rim 1.25s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    /* Track/Genre Palette Themes */
+    /* 1. Cyberpunk Synthwave (Default) */
+    .palette-cyberpunk {
+      --palette-peak: #ff0055;
+      --palette-mid: #ffb300;
+      --palette-base: #00e5ff;
+      --palette-glow: rgba(0, 229, 255, 0.45);
+      --palette-rim: #00ffff;
+    }
+
+    /* 2. Crimson Phonk Fire (Aggressive Drift/Trap) */
+    .palette-phonk-fire {
+      --palette-peak: #ffffff;
+      --palette-mid: #ff2a00;
+      --palette-base: #8b0000;
+      --palette-glow: rgba(255, 42, 0, 0.55);
+      --palette-rim: #ff3b30;
+    }
+
+    /* 3. Deep Aurora Borealis (Melodic / Ambient) */
+    .palette-aurora {
+      --palette-peak: #00ffcc;
+      --palette-mid: #00b4d8;
+      --palette-base: #7b2cbf;
+      --palette-glow: rgba(0, 255, 204, 0.5);
+      --palette-rim: #38b000;
+    }
+
+    /* 4. Imperial Obsidian Gold (Hi-Res Acoustic Master) */
+    .palette-obsidian-gold {
+      --palette-peak: #ffffff;
+      --palette-mid: #ffd700;
+      --palette-base: #ff8c00;
+      --palette-glow: rgba(255, 215, 0, 0.45);
+      --palette-rim: #daa520;
+    }
+
+    /* 5. Acid Neon Emerald (High Voltage Groove) */
+    .palette-acid-emerald {
+      --palette-peak: #f72585;
+      --palette-mid: #7209b7;
+      --palette-base: #06d6a0;
+      --palette-glow: rgba(6, 214, 160, 0.5);
+      --palette-rim: #00f5d4;
+    }
+
+    /* Fluid Song Transition Pulse */
+    @keyframes songChangeMorphPulse {
+      0% {
+        transform: scale(0.96);
+        filter: drop-shadow(0 0 10px var(--palette-glow)) brightness(1.2);
+      }
+      50% {
+        transform: scale(1.03);
+        filter: drop-shadow(0 0 35px var(--palette-glow)) brightness(1.4);
+      }
+      100% {
+        transform: scale(1.0);
+        filter: drop-shadow(0 0 18px var(--palette-glow)) brightness(1.0);
+      }
+    }
+
+    .song-transition-active {
+      animation: songChangeMorphPulse 1.25s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    /* Morphing Vinyl Stage Ring */
+    .vinyl-stage {
+      position: relative;
+      width: 280px;
+      height: 280px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      box-shadow: 0 0 35px var(--palette-glow);
+      transition: box-shadow 1.25s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    #visualizer-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    /* Views */
+    .view-container { display: none; width: 100vw; min-height: 100vh; padding: 16px; padding-bottom: 90px; }
+    .view-container.active { display: block; }
+
+    /* Top Bar & Exit Button */
+    .top-bar-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .exit-btn {
+      background: rgba(255, 0, 85, 0.15);
+      border: 1px solid #ff0055;
+      color: #ff0055;
+      font-size: 11px;
+      font-weight: 900;
+      font-family: monospace;
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      letter-spacing: 1.2px;
+      box-shadow: 0 0 10px rgba(255, 0, 85, 0.25);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .exit-btn:hover, .exit-btn:active {
+      background: #ff0055;
+      color: #ffffff;
+      box-shadow: 0 0 22px rgba(255, 0, 85, 0.85);
+      transform: scale(1.05);
+    }
+    .song-count-pill {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 900;
+      font-family: monospace;
+      color: var(--palette-base);
+      background: rgba(0, 229, 255, 0.12);
+      border: 1px solid var(--palette-base);
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-left: 6px;
+      letter-spacing: 0.8px;
+      box-shadow: 0 0 8px var(--palette-glow);
+      transition: all 1.25s ease;
+    }
+
+    /* Songs / Library View (Task 2: Instant Boot) */
+    .header-title { font-size: 17px; font-weight: 900; letter-spacing: 1.5px; color: var(--palette-base); margin-bottom: 4px; font-family: monospace; transition: color 1.25s ease; }
+    .header-sub { font-size: 11px; color: var(--text-muted); font-weight: bold; margin-bottom: 16px; }
+
+    .track-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .track-card {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface-dark); border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 12px 14px; border-radius: 12px; cursor: pointer; transition: transform 0.2s, border-color 0.2s;
+    }
+    .track-card:active { transform: scale(0.98); border-color: var(--palette-base); }
+    .track-meta { flex: 1; overflow: hidden; padding-right: 12px; }
+    .track-title { font-size: 14px; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .track-artist { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .track-badge { font-size: 9px; font-family: monospace; color: var(--palette-mid); border: 1px solid var(--palette-mid); padding: 2px 6px; border-radius: 4px; transition: all 1.25s ease; }
+
+    /* Palette Indicator Badge */
+    .palette-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-family: monospace;
+      color: var(--palette-base);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--palette-base);
+      box-shadow: 0 0 12px var(--palette-glow);
+      margin-top: 14px;
+      transition: all 1.25s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    /* TASK 3: LIVE ACTIVE AUDIO HARDWARE BADGE */
+    .hw-device-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 800;
+      font-family: monospace;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      background: rgba(0, 0, 0, 0.65);
+      border: 1.5px solid var(--palette-base);
+      color: var(--palette-base);
+      box-shadow: 0 0 16px var(--palette-glow);
+      transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+      user-select: none;
+    }
+
+    /* TASK 1: USB DAC NEON BORDER PULSE */
+    @keyframes usbDacNeonGlowPulse {
+      0% {
+        box-shadow: 0 0 10px rgba(0, 229, 255, 0.4), inset 0 0 5px rgba(0, 229, 255, 0.2);
+        border-color: rgba(0, 229, 255, 0.6);
+      }
+      50% {
+        box-shadow: 0 0 28px rgba(0, 229, 255, 0.95), inset 0 0 14px rgba(0, 229, 255, 0.5);
+        border-color: #00e5ff;
+      }
+      100% {
+        box-shadow: 0 0 10px rgba(0, 229, 255, 0.4), inset 0 0 5px rgba(0, 229, 255, 0.2);
+        border-color: rgba(0, 229, 255, 0.6);
+      }
+    }
+
+    .usb-dac-pulse {
+      animation: usbDacNeonGlowPulse 1.75s infinite ease-in-out !important;
+      border-color: #00e5ff !important;
+      color: #00e5ff !important;
+    }
+
+    /* TASK 3: DSP ACTIVITY STATUS DOT */
+    .dsp-status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+      transition: all 0.35s ease;
+    }
+
+    @keyframes dotBreathingPulse {
+      0% { transform: scale(0.9); opacity: 0.8; }
+      50% { transform: scale(1.35); opacity: 1.0; }
+      100% { transform: scale(0.9); opacity: 0.8; }
+    }
+
+    /* Green: Pure linear audiophile reference */
+    .dsp-dot-pure {
+      background-color: #00ff88;
+      box-shadow: 0 0 10px #00ff88;
+      animation: dotBreathingPulse 2.0s infinite ease-in-out;
+    }
+
+    /* Yellow: Bluetooth SBC/AAC codec compensated */
+    .dsp-dot-compensated {
+      background-color: #ffb300;
+      box-shadow: 0 0 10px #ffb300;
+      animation: dotBreathingPulse 1.6s infinite ease-in-out;
+    }
+
+    /* Red: Speaker high-pass & peak limiter active */
+    .dsp-dot-limited {
+      background-color: #ff0055;
+      box-shadow: 0 0 10px #ff0055;
+      animation: dotBreathingPulse 1.2s infinite ease-in-out;
+    }
+
+    /* Info Icon Button (ⓘ) */
+    .hw-info-btn {
+      background: none;
+      border: none;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.12);
+      transition: all 0.2s ease;
+      margin-left: 2px;
+    }
+    .hw-info-btn:hover, .hw-info-btn:active {
+      background: var(--palette-base);
+      color: #06090f;
+      transform: scale(1.15);
+    }
+
+    /* TASK 2: TECHNICAL BREAKDOWN CYBERPUNK MODAL OVERLAY */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(6, 9, 15, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal-overlay.modal-open {
+      display: flex;
+      opacity: 1;
+    }
+
+    .modal-content {
+      width: 100%;
+      max-width: 360px;
+      background: #0d1424;
+      border: 1px solid var(--palette-base);
+      box-shadow: 0 0 35px var(--palette-glow), inset 0 0 15px rgba(0, 229, 255, 0.08);
+      border-radius: 16px;
+      padding: 20px;
+      color: var(--text-main);
+      font-family: monospace;
+      transform: scale(0.92);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal-overlay.modal-open .modal-content {
+      transform: scale(1.0);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    .modal-title {
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      color: var(--palette-base);
+    }
+    .modal-close-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+    .modal-close-btn:hover {
+      color: #ff0055;
+    }
+
+    .specs-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .spec-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 11px;
+    }
+    .spec-label {
+      color: var(--text-muted);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .spec-value {
+      color: var(--text-main);
+      font-weight: 800;
+      text-align: right;
+    }
+    .highlight-cyan { color: #00e5ff; }
+    .highlight-amber { color: #ffb300; }
+    .highlight-green { color: #00ff88; }
+
+    .dsp-badge-pill {
+      padding: 2px 8px;
+      border-radius: 10px;
+      border: 1px solid #ff0055;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .spec-detail-box {
+      margin-top: 10px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .spec-desc-text {
+      color: #cbd5e1;
+      font-size: 10px;
+      line-height: 1.4;
+      margin-top: 4px;
+    }
+
+    /* CRITICAL BUG 2: POWERAMP-LEVEL SEEKBAR & CONTROLS */
+    .player-controls-card {
+      margin-top: 18px;
+      padding: 16px;
+      background: rgba(13, 20, 36, 0.75);
+      border: 1px solid rgba(0, 229, 255, 0.25);
+      border-radius: 16px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 16px rgba(0, 229, 255, 0.12);
+      width: 100%;
+      max-width: 440px;
+      margin-left: auto;
+      margin-right: auto;
+      box-sizing: border-box;
+    }
+
+    .time-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .time-label {
+      font-family: monospace;
+      font-size: 12px;
+      font-weight: 700;
+      color: #94a3b8;
+      letter-spacing: 0.5px;
+    }
+
+    .time-label.current {
+      color: var(--palette-base);
+      text-shadow: 0 0 8px var(--palette-glow);
+    }
+
+    .seek-slider-wrapper {
+      position: relative;
+      width: 100%;
+      height: 28px;
+      display: flex;
+      align-items: center;
+    }
+
+    .seek-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 6px;
+      background: linear-gradient(to right, var(--palette-base) 0%, rgba(255, 255, 255, 0.15) 0%);
+      outline: none;
+      cursor: pointer;
+      transition: background 0.05s linear;
+    }
+
+    .seek-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 2.5px solid var(--palette-base);
+      box-shadow: 0 0 12px var(--palette-base), 0 0 4px rgba(0,0,0,0.8);
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.15s ease;
+    }
+
+    .seek-slider::-webkit-slider-thumb:hover,
+    .seek-slider::-webkit-slider-thumb:active {
+      transform: scale(1.25);
+      box-shadow: 0 0 20px var(--palette-base), 0 0 8px #ffffff;
+    }
+
+    .transport-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 22px;
+      margin-top: 14px;
+    }
+
+    .transport-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #e2e8f0;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+      outline: none;
+    }
+
+    .transport-btn:active {
+      transform: scale(0.92);
+    }
+
+    .skip-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .skip-btn:hover {
+      border-color: var(--palette-base);
+      box-shadow: 0 0 12px var(--palette-glow);
+    }
+
+    .skip-btn .transport-icon {
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .skip-btn .skip-text {
+      font-family: monospace;
+      font-size: 9px;
+      font-weight: 800;
+      margin-top: 2px;
+      color: #cbd5e1;
+    }
+
+    .master-play-btn {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(255, 0, 85, 0.25));
+      border: 2px solid var(--palette-base);
+      box-shadow: 0 0 20px var(--palette-glow), inset 0 0 10px rgba(0, 229, 255, 0.2);
+    }
+
+    .master-play-btn:hover {
+      box-shadow: 0 0 28px var(--palette-base), inset 0 0 16px rgba(0, 229, 255, 0.4);
+      transform: scale(1.05);
+    }
+
+    .master-play-btn .master-icon {
+      font-size: 24px;
+      color: #ffffff;
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+      margin-left: 2px;
+    }
+
+    /* Bottom Navigation Bar */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 65px;
+      background: var(--surface-dark); border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex; justify-content: space-around; align-items: center; z-index: 100;
+    }
+    .nav-btn { background: none; border: none; color: var(--text-muted); font-size: 10px; font-weight: 800; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; font-family: monospace; }
+    .nav-btn.active { color: var(--palette-base); }
+  </style>
+</head>
+<body>
+
+  <!-- HIDDEN COVER ART ASSET BUFFERS FOR CANVAS RENDERING -->
+  <img id="cover-art-img" style="display:none;" crossOrigin="anonymous" alt="Album Art" />
+  <img id="mini-art-img" style="display:none;" crossOrigin="anonymous" alt="Mini Art" />
+
+  <!-- VIEW: SONGS LIST (BOOTS DIRECTLY HERE) -->
+  <section id="view-songs" class="view-container active">
+    <div class="top-bar-container">
+      <div class="header-title">XP MUSIC VAULT • FLUID DSP</div>
+      <button id="btn-exit-app" class="exit-btn" onclick="window.forceExitApp()">EXIT ✕</button>
+    </div>
+    <div class="header-sub">
+      STRICT FOLDER: /storage/3263-3638/phonks
+      <span id="total-song-count" class="song-count-pill">0 TRACKS</span>
+    </div>
+    <ul id="track-list" class="track-list">
+      <!-- Tracks dynamically injected from AndroidBridge.performShallowScan() -->
+    </ul>
+  </section>
+
+  <!-- VIEW: PLAYER WITH FLUID MORPHING VISUALIZER -->
+  <section id="view-player" class="view-container">
+    <div class="top-bar-container" style="margin-bottom: 4px;">
+      <div class="header-title" style="margin-bottom: 0;">32-BIT STUDIO DSP</div>
+      <button class="exit-btn" onclick="window.forceExitApp()">EXIT ✕</button>
+    </div>
+    
+    <!-- TASK 1, 2, 3: LIVE ACTIVE AUDIO HARDWARE BADGE WITH STATUS DOT & INFO BUTTON -->
+    <div style="display: flex; justify-content: center; margin-top: 6px; margin-bottom: 8px;">
+      <div id="hw-device-badge" class="hw-device-badge">
+        <span id="dsp-status-dot" class="dsp-status-dot dsp-dot-limited"></span>
+        <span id="hw-device-text">🔊 BUILT-IN SPEAKER (Optimized Loudness)</span>
+        <button id="hw-info-btn" class="hw-info-btn" title="View Hardware Technical Breakdown" onclick="window.openHwSpecsModal(event)">ⓘ</button>
+      </div>
+    </div>
+
+    <!-- TASK 2: TECHNICAL BREAKDOWN CYBERPUNK MODAL OVERLAY -->
+    <div id="hw-specs-modal" class="modal-overlay" onclick="window.closeHwSpecsModal(event)">
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <div class="modal-title">HARDWARE AUDIO PIPELINE</div>
+          <button class="modal-close-btn" onclick="window.closeHwSpecsModal()">✕</button>
+        </div>
+        
+        <div class="specs-grid">
+          <div class="spec-row">
+            <span class="spec-label">ACTIVE DEVICE</span>
+            <span id="spec-device-name" class="spec-value">Built-in Speaker</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-label">SAMPLE RATE</span>
+            <span id="spec-sample-rate" class="spec-value highlight-cyan">48,000 Hz</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-label">BIT-DEPTH</span>
+            <span id="spec-bit-depth" class="spec-value highlight-amber">24-bit PCM</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-label">BUFFER LATENCY</span>
+            <span id="spec-latency" class="spec-value highlight-green">5.3 ms (Low-Latency HAL)</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-label">CHANNELS</span>
+            <span id="spec-channels" class="spec-value">2 Channels (Stereo 2.0)</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-label">DSP PROFILE</span>
+            <span id="spec-dsp-profile" class="spec-value dsp-badge-pill">LIMITED</span>
+          </div>
+          <div class="spec-detail-box">
+            <span class="spec-label">ACTIVE DSP PIPELINE ENFORCEMENT</span>
+            <div id="spec-dsp-desc" class="spec-desc-text">
+              High-Pass Filter (&lt; 80Hz) + Dynamic Loudness Peak Limiter
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="morphing-container" class="morphing-visualizer-container palette-cyberpunk">
+      <div class="vinyl-stage">
+        <canvas id="visualizer-canvas" width="560" height="560"></canvas>
+      </div>
+      <div id="palette-indicator" class="palette-badge">PALETTE: CYBERPUNK SYNTH</div>
+    </div>
+
+    <div id="now-playing-title" style="text-align: center; font-size: 18px; font-weight: 800; margin-top: 14px;">Select a Track</div>
+    <div id="now-playing-artist" style="text-align: center; font-size: 12px; color: var(--text-muted); margin-top: 4px;">Phonk Storage</div>
+
+    <!-- CRITICAL BUG 2: POWERAMP-STYLE SEEKBAR & TRANSPORT CONTROLS -->
+    <div class="player-controls-card">
+      <div class="time-row">
+        <span id="current-time-label" class="time-label current">0:00</span>
+        <span id="duration-time-label" class="time-label">0:00</span>
+      </div>
+      <div class="seek-slider-wrapper">
+        <input type="range" id="seek-slider" min="0" max="1000" value="0" step="1" class="seek-slider" aria-label="Seek Progress" />
+      </div>
+      <div class="transport-row">
+        <button id="btn-skip-backward" class="transport-btn skip-btn" onclick="window.onSkipBackward()" title="Skip Backward 10s">
+          <span class="transport-icon">↺</span>
+          <span class="skip-text">-10s</span>
+        </button>
+        <button id="btn-master-play-pause" class="transport-btn master-play-btn" onclick="window.onToggleMasterPlay()" title="Play / Pause">
+          <span id="play-pause-icon" class="master-icon">▶</span>
+        </button>
+        <button id="btn-skip-forward" class="transport-btn skip-btn" onclick="window.onSkipForward()" title="Skip Forward 10s">
+          <span class="transport-icon">↻</span>
+          <span class="skip-text">+10s</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOTTOM NAVIGATION -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" onclick="window.switchViewMode('songs')">
+      <span style="font-size: 16px;">📁</span>SONGS
+    </button>
+    <button class="nav-btn" onclick="window.switchViewMode('player')">
+      <span style="font-size: 16px;">⚡</span>PLAYER
+    </button>
+  </nav>
+
+  <script>
+    /**
+     * FLUID CSS-BASED PALETTE MORPHING VISUALIZER ENGINE
+     * Decoupled from native blocking calls; pure delta-time continuous vinyl rotation.
+     */
+    (function() {
+      "use strict";
+
+      const PALETTES = [
+        { name: "CYBERPUNK SYNTH", className: "palette-cyberpunk", peak: [255, 0, 85], mid: [255, 179, 0], base: [0, 229, 255] },
+        { name: "CRIMSON PHONK FIRE", className: "palette-phonk-fire", peak: [255, 255, 255], mid: [255, 42, 0], base: [139, 0, 0] },
+        { name: "DEEP AURORA BOREALIS", className: "palette-aurora", peak: [0, 255, 204], mid: [0, 180, 216], base: [123, 44, 191] },
+        { name: "IMPERIAL OBSIDIAN GOLD", className: "palette-obsidian-gold", peak: [255, 255, 255], mid: [255, 215, 0], base: [255, 140, 0] },
+        { name: "ACID NEON EMERALD", className: "palette-acid-emerald", peak: [247, 37, 133], mid: [114, 9, 183], base: [6, 214, 160] }
+      ];
+
+      let currentPaletteIndex = 0;
+      const morphContainer = document.getElementById("morphing-container");
+      const paletteIndicator = document.getElementById("palette-indicator");
+
+      // Cached target color values (NO expensive getComputedStyle inside the 60fps render loop)
+      let targetRPeak = 255, targetGPeak = 0, targetBPeak = 85;
+      let targetRMid = 255, targetGMid = 179, targetBMid = 0;
+      let targetRBase = 0, targetGBase = 229, targetBBase = 255;
+      let targetRDyn = 0, targetGDyn = 229, targetBDyn = 255;
+
+      /**
+       * Smoothly morphs spectrum bar color palette when a new song starts
+       */
+      window.morphToNextPalette = function(trackTitle) {
+        // Choose palette deterministically from title hash or rotation
+        let hash = 0;
+        if (trackTitle) {
+          for (let i = 0; i < trackTitle.length; i++) hash = (hash << 5) - hash + trackTitle.charCodeAt(i);
+          currentPaletteIndex = Math.abs(hash) % PALETTES.length;
+        } else {
+          currentPaletteIndex = (currentPaletteIndex + 1) % PALETTES.length;
+        }
+
+        const nextPalette = PALETTES[currentPaletteIndex];
+
+        // Update cached RGB targets directly
+        targetRPeak = nextPalette.peak[0];
+        targetGPeak = nextPalette.peak[1];
+        targetBPeak = nextPalette.peak[2];
+
+        targetRMid = nextPalette.mid[0];
+        targetGMid = nextPalette.mid[1];
+        targetBMid = nextPalette.mid[2];
+
+        targetRBase = nextPalette.base[0];
+        targetGBase = nextPalette.base[1];
+        targetBBase = nextPalette.base[2];
+
+        targetRDyn = nextPalette.base[0];
+        targetGDyn = nextPalette.base[1];
+        targetBDyn = nextPalette.base[2];
+
+        if (morphContainer) {
+          // Remove old palette classes
+          PALETTES.forEach(p => morphContainer.classList.remove(p.className));
+          morphContainer.classList.add(nextPalette.className);
+
+          // Trigger fluid breathing morph pulse animation
+          morphContainer.classList.remove("song-transition-active");
+          void morphContainer.offsetWidth; // Force CSS reflow
+          morphContainer.classList.add("song-transition-active");
+        }
+
+        if (paletteIndicator) {
+          paletteIndicator.textContent = "PALETTE: " + nextPalette.name;
+        }
+      };
+
+      // =====================================================================
+      // CANVAS REAL-TIME SPECTRUM RENDERER
+      // FIX 3: Fully decoupled from native blocking calls.
+      // Pure requestAnimationFrame delta-time rotation so vinyl NEVER freezes!
+      // =====================================================================
+      let canvas = document.getElementById("visualizer-canvas");
+      let ctx = canvas ? canvas.getContext("2d") : null;
+      let cachedCoverImg = document.getElementById("cover-art-img");
+
+      const FFT_SIZE = 512;
+      const freqData = new Uint8Array(FFT_SIZE / 2);
+      let audioCtx = null;
+      let analyser = null;
+      let animId = null;
+
+      // Color lerp state for frame-to-frame sub-pixel interpolation
+      let rPeak = 255, gPeak = 0, bPeak = 85;
+      let rMid = 255, gMid = 179, bMid = 0;
+      let rBase = 0, gBase = 229, bBase = 255;
+      let rDyn = 0, gDyn = 229, bDyn = 255;
+
+      // Persistent physics & peak arrays
+      const NUM_BARS = 64;
+      const currentLengths = new Float32Array(NUM_BARS);
+      const targetLengths = new Float32Array(NUM_BARS);
+      const peakData = new Float32Array(NUM_BARS);
+      const peakHoldTimer = new Int16Array(NUM_BARS);
+
+      // DELTA-TIME BASS ROTATION PHYSICS
+      let currentRotation = 0.0;
+      let smoothedBass = 0.0;
+      let lastFrameTime = 0.0;
+
+      /**
+       * High-Definition Motion Graphics Canvas Loop
+       * Runs completely decoupled from blocking native calls.
+       */
+      function renderFrame(timestamp) {
+        animId = requestAnimationFrame(renderFrame);
+        if (!canvas) {
+          canvas = document.getElementById("visualizer-canvas");
+          if (canvas) ctx = canvas.getContext("2d");
+        }
+        if (!ctx || !canvas) return;
+
+        // Accurate Delta Time computation
+        const now = timestamp || performance.now();
+        const dt = lastFrameTime > 0 ? Math.min((now - lastFrameTime) / 1000, 0.08) : 0.016;
+        lastFrameTime = now;
+
+        // Pull real-time audio spectrum data from Android Native Visualizer
+        let hasNativeFft = false;
+        if (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.getFftData) {
+          try {
+            const rawFft = window.AndroidBridge.getFftData();
+            if (rawFft && rawFft.length > 2) {
+              const bands = JSON.parse(rawFft);
+              if (bands && bands.length > 0) {
+                hasNativeFft = true;
+                const len = Math.min(bands.length, freqData.length);
+                for (let i = 0; i < len; i++) {
+                  freqData[i] = bands[i];
+                }
+              }
+            }
+          } catch (_) {}
+        }
+
+        if (!hasNativeFft) {
+          // Gentle idle decay when paused or loading
+          for (let i = 0; i < freqData.length; i++) {
+            freqData[i] = Math.floor(freqData[i] * 0.94);
+          }
+        }
+
+        const w = canvas.width;
+        const h = canvas.height;
+        const centerX = w / 2;
+        const centerY = h / 2;
+
+        // Sub-pixel smooth color transitions (zero DOM queries)
+        const alpha = 0.07;
+        rPeak += (targetRPeak - rPeak) * alpha;
+        gPeak += (targetGPeak - gPeak) * alpha;
+        bPeak += (targetBPeak - bPeak) * alpha;
+
+        rMid += (targetRMid - rMid) * alpha;
+        gMid += (targetGMid - gMid) * alpha;
+        bMid += (targetBMid - bMid) * alpha;
+
+        rBase += (targetRBase - rBase) * alpha;
+        gBase += (targetGBase - gBase) * alpha;
+        bBase += (targetBBase - bBase) * alpha;
+
+        rDyn += (targetRDyn - rDyn) * alpha;
+        gDyn += (targetGDyn - gDyn) * alpha;
+        bDyn += (targetBDyn - bDyn) * alpha;
+
+        // Phosphor persistence clear for CRT / OLED visual trail
+        ctx.fillStyle = "rgba(6, 9, 15, 0.32)";
+        ctx.fillRect(0, 0, w, h);
+
+        // Sub-bass energy calculation across low frequency bins (20Hz - 120Hz)
+        let subBassSum = 0;
+        const bassBinCount = 6;
+        for (let i = 1; i <= bassBinCount; i++) subBassSum += freqData[i];
+        const rawBassRatio = subBassSum / (bassBinCount * 255);
+
+        // Fluid spring interpolation for sub-bass energy
+        smoothedBass += (rawBassRatio - smoothedBass) * 0.18;
+
+        // FIX 3: BASS-DRIVEN CONTINUOUS DELTA-TIME ROTATION
+        // Continuous smooth rotation independent of audio state or bridge latency!
+        const baseSpeed = 0.95; // Radians per second continuous rotation
+        const bassSpeedBoost = smoothedBass * 3.5; // Accelerates when phonk bass hits
+        currentRotation += (baseSpeed + bassSpeedBoost) * dt;
+        if (currentRotation >= Math.PI * 2) {
+          currentRotation -= Math.PI * 2;
+        }
+
+        const baseRadius = (w * 0.28) + (smoothedBass * 22);
+
+        // Vinyl Stage Ambient Aura & Concentric Grooves
+        ctx.save();
+        ctx.translate(centerX, centerY);
+
+        // Sub-bass ambient background aura
+        const auraGrad = ctx.createRadialGradient(0, 0, baseRadius * 0.4, 0, 0, baseRadius * 1.35);
+        auraGrad.addColorStop(0, `rgba(${Math.round(rDyn)}, ${Math.round(gDyn)}, ${Math.round(bDyn)}, ${0.12 + smoothedBass * 0.25})`);
+        auraGrad.addColorStop(0.65, `rgba(${Math.round(rBase)}, ${Math.round(gBase)}, ${Math.round(bBase)}, ${0.05 + smoothedBass * 0.15})`);
+        auraGrad.addColorStop(1, "rgba(6, 9, 15, 0)");
+        ctx.fillStyle = auraGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, baseRadius * 1.35, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Vinyl concentric micro-grooves
+        ctx.lineWidth = 1.0;
+        for (let g = 1; g <= 4; g++) {
+          const grooveRadius = baseRadius * (0.68 + g * 0.07);
+          ctx.strokeStyle = `rgba(255, 255, 255, ${0.03 + (g % 2) * 0.02 + smoothedBass * 0.04})`;
+          ctx.beginPath();
+          ctx.arc(0, 0, grooveRadius, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        // Apply Bass-Driven Dynamic Rotation exclusively to spectrum bars, center album art, and peaks
+        ctx.rotate(currentRotation);
+
+        // TASK 1: Album Art inside the Vinyl/Spectrum Center (JS/Canvas)
+        // Uses ctx.clip() to create a circular mask and draws the currently playing cover-art-img
+        // so it rotates dynamically in sync with the vinyl and bass energy.
+        const centerDiscRadius = baseRadius * 0.52;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(0, 0, centerDiscRadius, 0, Math.PI * 2);
+        ctx.clip();
+
+        let drewCover = false;
+        try {
+          const coverArt = cachedCoverImg || document.getElementById("cover-art-img") || document.getElementById("mini-art-img");
+          if (coverArt && coverArt.complete && coverArt.naturalWidth > 0) {
+            ctx.drawImage(coverArt, -centerDiscRadius, -centerDiscRadius, centerDiscRadius * 2, centerDiscRadius * 2);
+            drewCover = true;
+          }
+        } catch (_) {
+          drewCover = false;
+        }
+
+        if (!drewCover) {
+          // Sleek Audiophile Vinyl Center Disc Fallback
+          const centerGrad = ctx.createRadialGradient(0, 0, 10, 0, 0, centerDiscRadius);
+          centerGrad.addColorStop(0, "#151f36");
+          centerGrad.addColorStop(0.7, "#090e1a");
+          centerGrad.addColorStop(1, "#03060a");
+          ctx.fillStyle = centerGrad;
+          ctx.fillRect(-centerDiscRadius, -centerDiscRadius, centerDiscRadius * 2, centerDiscRadius * 2);
+
+          // Subtle concentric vinyl grooves
+          for (let r = 16; r < centerDiscRadius; r += 14) {
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.06)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(0, 0, r, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+
+          // Center Label Typography
+          ctx.fillStyle = `rgb(${Math.round(rBase)}, ${Math.round(gBase)}, ${Math.round(bBase)})`;
+          ctx.font = "900 14px monospace";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("XP VAULT", 0, -10);
+          ctx.font = "bold 9px monospace";
+          ctx.fillStyle = "#94a3b8";
+          ctx.fillText("FLAC 24-BIT", 0, 8);
+        }
+
+        // Center Spindle Hole
+        ctx.beginPath();
+        ctx.arc(0, 0, 8, 0, Math.PI * 2);
+        ctx.fillStyle = "#06090f";
+        ctx.fill();
+        ctx.strokeStyle = `rgb(${Math.round(rBase)}, ${Math.round(gBase)}, ${Math.round(bBase)})`;
+        ctx.lineWidth = 2.0;
+        ctx.stroke();
+
+        ctx.restore();
+
+        // Neon Border Ring around Album Art Label
+        ctx.beginPath();
+        ctx.arc(0, 0, centerDiscRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgb(${Math.round(rBase)}, ${Math.round(gBase)}, ${Math.round(bBase)})`;
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = `rgba(${Math.round(rBase)}, ${Math.round(gBase)}, ${Math.round(bBase)}, 0.65)`;
+        ctx.shadowBlur = 10;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        const peakGravityDecay = 1.45; // Pixels per frame decay
+        const peakHoldDuration = 7;    // Number of frames to hold peak before gravity pulls it down
+
+        for (let i = 0; i < NUM_BARS; i++) {
+          // Logarithmic non-linear perceptual frequency distribution
+          const binIndex = Math.min(
+            freqData.length - 1,
+            Math.floor(Math.pow(i / NUM_BARS, 1.35) * 88) + 1
+          );
+          const rawAmp = freqData[binIndex] / 255.0;
+          const targetLen = Math.pow(rawAmp, 1.28) * (h * 0.19);
+          targetLengths[i] = targetLen;
+
+          // Spring-based asymmetric LERP: punchy attack, fluid liquid release
+          const smoothFactor = targetLen > currentLengths[i] ? 0.42 : 0.13;
+          currentLengths[i] += (targetLen - currentLengths[i]) * smoothFactor;
+          const curLen = currentLengths[i];
+
+          // Peak-Hold Effect with Gravity Decay
+          if (curLen >= peakData[i]) {
+            peakData[i] = curLen;
+            peakHoldTimer[i] = peakHoldDuration;
+          } else {
+            if (peakHoldTimer[i] > 0) {
+              peakHoldTimer[i]--;
+            } else {
+              peakData[i] -= peakGravityDecay;
+              if (peakData[i] < curLen) {
+                peakData[i] = curLen;
+              }
+            }
+          }
+
+          const angle = (i / NUM_BARS) * Math.PI * 2;
+          const cosA = Math.cos(angle);
+          const sinA = Math.sin(angle);
+
+          const x1 = cosA * baseRadius;
+          const y1 = sinA * baseRadius;
+          const x2 = cosA * (baseRadius + curLen);
+          const y2 = sinA * (baseRadius + curLen);
+
+          // Dynamic color interpolation
+          const ampNorm = Math.min(1.0, curLen / ((h * 0.19) || 1));
+          const curR = Math.round(rBase + (rPeak - rBase) * ampNorm);
+          const curG = Math.round(gBase + (gPeak - gBase) * ampNorm);
+          const curB = Math.round(bBase + (bPeak - bBase) * ampNorm);
+
+          // Spectrum Bar Main Stroke
+          ctx.strokeStyle = `rgb(${curR}, ${curG}, ${curB})`;
+          ctx.lineWidth = Math.max(3.2, (w / NUM_BARS) * 0.72);
+          ctx.lineCap = "round";
+
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+
+          // Bar Specular Core Tip
+          if (curLen > 2) {
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            ctx.arc(x2, y2, 1.8, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // Tangential Peak Bar / Needle Indicator
+          const peakLen = peakData[i];
+          if (peakLen > 3) {
+            const pRadius = baseRadius + peakLen + 5.0;
+            const px = cosA * pRadius;
+            const py = sinA * pRadius;
+
+            const tanAngle = angle + Math.PI / 2;
+            const tanCos = Math.cos(tanAngle);
+            const tanSin = Math.sin(tanAngle);
+            const halfCapWidth = Math.max(2.8, (w / NUM_BARS) * 0.5);
+
+            // Glowing peak cap outer bloom
+            ctx.strokeStyle = `rgba(${curR}, ${curG}, ${curB}, 0.55)`;
+            ctx.lineWidth = 3.5;
+            ctx.beginPath();
+            ctx.moveTo(px - tanCos * halfCapWidth, py - tanSin * halfCapWidth);
+            ctx.lineTo(px + tanCos * halfCapWidth, py + tanSin * halfCapWidth);
+            ctx.stroke();
+
+            // Glowing peak cap bright needle core
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.moveTo(px - tanCos * (halfCapWidth * 0.8), py - tanSin * (halfCapWidth * 0.8));
+            ctx.lineTo(px + tanCos * (halfCapWidth * 0.8), py + tanSin * (halfCapWidth * 0.8));
+            ctx.stroke();
+          }
+        }
+
+        ctx.restore();
+      }
+
+      // Alias runFrame for cross-compatibility
+      window.runFrame = renderFrame;
+      window.renderFrame = renderFrame;
+
+      function initVisualizer() {
+        if (!animId) {
+          animId = requestAnimationFrame(renderFrame);
+        }
+      }
+
+      // =====================================================================
+      // VIEW SWITCHING & TRACK PLAYBACK HOOK
+      // =====================================================================
+      window.switchViewMode = function(modeName) {
+        document.querySelectorAll(".view-container").forEach(el => el.classList.remove("active"));
+        document.querySelectorAll(".nav-btn").forEach(el => el.classList.remove("active"));
+
+        const targetView = document.getElementById("view-" + modeName);
+        if (targetView) targetView.classList.add("active");
+
+        const targetNavBtn = document.querySelector(`.nav-btn[onclick*="${modeName}"]`);
+        if (targetNavBtn) targetNavBtn.classList.add("active");
+      };
+
+      function generateVinylCoverSvg(title, artist) {
+        const cleanTitle = (title || "PHONK TRACK").substring(0, 18).toUpperCase();
+        const cleanArtist = (artist || "VAULT ULTRA").substring(0, 18).toUpperCase();
+        const initial = cleanTitle.charAt(0) || "X";
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
+          <defs>
+            <radialGradient id="discGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#1e293b"/>
+              <stop offset="60%" stop-color="#0f172a"/>
+              <stop offset="100%" stop-color="#020617"/>
+            </radialGradient>
+            <linearGradient id="neonRing" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#00e5ff"/>
+              <stop offset="50%" stop-color="#ff0055"/>
+              <stop offset="100%" stop-color="#ffb300"/>
+            </linearGradient>
+          </defs>
+          <rect width="300" height="300" fill="url(#discGrad)"/>
+          <circle cx="150" cy="150" r="140" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="4"/>
+          <circle cx="150" cy="150" r="110" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+          <circle cx="150" cy="150" r="82" fill="none" stroke="url(#neonRing)" stroke-width="3" stroke-dasharray="6,4"/>
+          <circle cx="150" cy="150" r="50" fill="#070a12" stroke="#00e5ff" stroke-width="2"/>
+          <text x="150" y="157" font-family="monospace" font-size="34" font-weight="900" fill="#00e5ff" text-anchor="middle" dominant-baseline="middle">${initial}</text>
+          <text x="150" y="85" font-family="monospace" font-size="11" font-weight="bold" fill="#f1f5f9" text-anchor="middle" letter-spacing="2">${cleanTitle}</text>
+          <text x="150" y="220" font-family="monospace" font-size="9" font-weight="bold" fill="#94a3b8" text-anchor="middle" letter-spacing="1.5">${cleanArtist}</text>
+        </svg>`;
+        return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+      }
+
+      // TASK 6: SYSTEM EXIT BUTTON
+      window.forceExitApp = function() {
+        if (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.forceExitApp) {
+          window.AndroidBridge.forceExitApp();
+        } else {
+          try { window.close(); } catch (_) {}
+        }
+      };
+
+      // =====================================================================
+      // CRITICAL FIX 2: POWERAMP-LEVEL SEEKBAR & CONTROLS SYNC
+      // =====================================================================
+      let isUserSeeking = false;
+
+      function formatTime(ms) {
+        if (!ms || ms <= 0 || isNaN(ms)) return "0:00";
+        const totalSec = Math.floor(ms / 1000);
+        const mins = Math.floor(totalSec / 60);
+        const secs = totalSec % 60;
+        return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+      }
+
+      window.onToggleMasterPlay = function() {
+        if (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.togglePlayPause) {
+          window.AndroidBridge.togglePlayPause();
+        }
+      };
+
+      window.onSkipBackward = function() {
+        if (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.seekRelative) {
+          window.AndroidBridge.seekRelative(-10000);
+        }
+      };
+
+      window.onSkipForward = function() {
+        if (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.seekRelative) {
+          window.AndroidBridge.seekRelative(10000);
+        }
+      };
+
+      function updateSeekSliderProgress(currentMs, totalMs) {
+        const slider = document.getElementById("seek-slider");
+        const currentLabel = document.getElementById("current-time-label");
+        const durationLabel = document.getElementById("duration-time-label");
+        if (!slider) return;
+
+        if (totalMs > 0) {
+          const ratio = Math.min(Math.max(currentMs / totalMs, 0), 1);
+          if (!isUserSeeking) {
+            slider.value = Math.floor(ratio * 1000);
+          }
+          const percent = (ratio * 100).toFixed(1);
+          slider.style.background = `linear-gradient(to right, var(--palette-base) ${percent}%, rgba(255, 255, 255, 0.15) ${percent}%)`;
+        }
+
+        if (currentLabel && !isUserSeeking) {
+          currentLabel.textContent = formatTime(currentMs);
+        }
+        if (durationLabel && totalMs > 0) {
+          durationLabel.textContent = formatTime(totalMs);
+        }
+      }
+
+      function initSeekbarControls() {
+        const slider = document.getElementById("seek-slider");
+        const currentLabel = document.getElementById("current-time-label");
+        if (!slider) return;
+
+        slider.addEventListener("input", () => {
+          isUserSeeking = true;
+          if (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.getDurationMs) {
+            const dur = window.AndroidBridge.getDurationMs();
+            const previewMs = (slider.value / 1000) * dur;
+            if (currentLabel) currentLabel.textContent = formatTime(previewMs);
+            const percent = ((slider.value / 1000) * 100).toFixed(1);
+            slider.style.background = `linear-gradient(to right, var(--palette-base) ${percent}%, rgba(255, 255, 255, 0.15) ${percent}%)`;
+          }
+        });
+
+        slider.addEventListener("change", () => {
+          if (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.seek && window.AndroidBridge.getDurationMs) {
+            const dur = window.AndroidBridge.getDurationMs();
+            const targetMs = Math.floor((slider.value / 1000) * dur);
+            window.AndroidBridge.seek(targetMs);
+          }
+          setTimeout(() => { isUserSeeking = false; }, 150);
+        });
+
+        // 4Hz background poll to sync seekbar, timestamps, and play/pause icon state
+        setInterval(() => {
+          if (typeof window.AndroidBridge === "undefined") return;
+          try {
+            const isPlaying = window.AndroidBridge.isPlaying ? window.AndroidBridge.isPlaying() : false;
+            const playIcon = document.getElementById("play-pause-icon");
+            if (playIcon) {
+              playIcon.textContent = isPlaying ? "❚❚" : "▶";
+            }
+
+            if (!isUserSeeking && window.AndroidBridge.getCurrentPositionMs && window.AndroidBridge.getDurationMs) {
+              const pos = window.AndroidBridge.getCurrentPositionMs();
+              const dur = window.AndroidBridge.getDurationMs();
+              updateSeekSliderProgress(pos, dur);
+            }
+          } catch (_) {}
+        }, 250);
+      }
+
+      function playTrack(track) {
+        // CRITICAL FIX 1: 100% Native Engine Takeover
+        // Delegates playback directly to AndroidBridge -> AudioVaultService (MediaPlayer)
+        // Activating the full DynamicsProcessing (+15dB Limiter), Dolby Atmos, and Virtualizer
+        if (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.playTrackNative) {
+          window.AndroidBridge.playTrackNative(
+            track.contentUri || track.filePath,
+            track.title || "Unknown Title",
+            track.artist || "Unknown Artist",
+            track.album || "Phonk Vault",
+            track.duration || 0
+          );
+        }
+
+        initVisualizer();
+
+        document.getElementById("now-playing-title").textContent = track.title || "Unknown Track";
+        document.getElementById("now-playing-artist").textContent = track.artist || "Unknown Artist";
+
+        // Reset seek slider to 0
+        const slider = document.getElementById("seek-slider");
+        if (slider) {
+          slider.value = 0;
+          slider.style.background = `linear-gradient(to right, var(--palette-base) 0%, rgba(255, 255, 255, 0.15) 0%)`;
+        }
+        const curLabel = document.getElementById("current-time-label");
+        if (curLabel) curLabel.textContent = "0:00";
+        const durLabel = document.getElementById("duration-time-label");
+        if (durLabel) durLabel.textContent = formatTime(track.duration || 0);
+
+        // TASK 1: Update spinning vinyl center album art buffer
+        const coverImg = document.getElementById("cover-art-img");
+        if (coverImg) {
+          if (track.albumArtUrl) {
+            coverImg.src = track.albumArtUrl;
+          } else {
+            coverImg.src = generateVinylCoverSvg(track.title, track.artist);
+          }
+        }
+
+        // TRIGGER FLUID CSS PALETTE MORPHING ON NEW SONG
+        window.morphToNextPalette(track.title);
+
+        window.switchViewMode("player");
+      }
+
+      function loadStrictPhonkLibrary() {
+        let tracks = [];
+        if (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.performShallowScan) {
+          try {
+            tracks = JSON.parse(window.AndroidBridge.performShallowScan());
+          } catch (_) {}
+        }
+
+        // Descending sort (newest first)
+        tracks.sort((a, b) => (parseInt(b.lastModified || 0, 10)) - (parseInt(a.lastModified || 0, 10)));
+
+        // TASK 4: Total Song Count Display Update
+        const countEl = document.getElementById("total-song-count");
+        if (countEl) {
+          countEl.textContent = `${tracks.length} SONGS LOADED`;
+        }
+
+        const listEl = document.getElementById("track-list");
+        if (!listEl) return;
+        listEl.innerHTML = "";
+
+        if (tracks.length === 0) {
+          listEl.innerHTML = `<li style="text-align:center; padding: 40px; color: var(--text-muted); font-size: 13px;">No audio files found in /storage/3263-3638/phonks</li>`;
+          return;
+        }
+
+        tracks.forEach(t => {
+          const li = document.createElement("li");
+          li.className = "track-card";
+          li.innerHTML = `
+            <div class="track-meta">
+              <div class="track-title">${t.title}</div>
+              <div class="track-artist">${t.artist} • ${t.album || 'Phonk'}</div>
+            </div>
+            <div class="track-badge">FLAC DSP</div>
+          `;
+          li.onclick = () => playTrack(t);
+          listEl.appendChild(li);
+        });
+      }
+
+      // =====================================================================
+      // TASK 2: TECHNICAL BREAKDOWN MODAL OVERLAY LOGIC
+      // =====================================================================
+      window.openHwSpecsModal = function(e) {
+        if (e) e.stopPropagation();
+
+        let specs = null;
+        if (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.getHardwareSpecs) {
+          try {
+            specs = JSON.parse(window.AndroidBridge.getHardwareSpecs());
+          } catch (err) {
+            console.error("Hardware specs parse error:", err);
+          }
+        }
+
+        if (!specs) {
+          specs = {
+            deviceName: "Built-in Phone Speaker",
+            routeType: "SPEAKER",
+            sampleRate: "48,000 Hz (48kHz)",
+            bitDepth: "24-bit PCM",
+            bufferLatencyMs: "5.3 ms (Low-Latency HAL)",
+            channelCount: "2 Channels (Stereo 2.0)",
+            dspStatus: "LIMITED",
+            dspColor: "#ff0055",
+            dspDescription: "High-Pass Filter (< 80Hz) + Dynamic Loudness Peak Limiter",
+            badgeText: "🔊 BUILT-IN SPEAKER (Optimized Loudness)"
+          };
+        }
+
+        const nameEl = document.getElementById("spec-device-name");
+        if (nameEl) nameEl.textContent = specs.deviceName || "Unknown Device";
+
+        const rateEl = document.getElementById("spec-sample-rate");
+        if (rateEl) rateEl.textContent = specs.sampleRate || "48,000 Hz";
+
+        const bitEl = document.getElementById("spec-bit-depth");
+        if (bitEl) bitEl.textContent = specs.bitDepth || "24-bit PCM";
+
+        const latEl = document.getElementById("spec-latency");
+        if (latEl) latEl.textContent = specs.bufferLatencyMs || "5.3 ms";
+
+        const chanEl = document.getElementById("spec-channels");
+        if (chanEl) chanEl.textContent = specs.channelCount || "2 Channels (Stereo 2.0)";
+
+        const dspPill = document.getElementById("spec-dsp-profile");
+        if (dspPill) {
+          dspPill.textContent = specs.dspStatus || "ACTIVE";
+          const col = specs.dspColor || "#ff0055";
+          dspPill.style.color = col;
+          dspPill.style.borderColor = col;
+          dspPill.style.boxShadow = `0 0 12px ${col}`;
+        }
+
+        const descEl = document.getElementById("spec-dsp-desc");
+        if (descEl) descEl.textContent = specs.dspDescription || "Hardware-calibrated DSP active";
+
+        const modal = document.getElementById("hw-specs-modal");
+        if (modal) modal.classList.add("modal-open");
+      };
+
+      window.closeHwSpecsModal = function(e) {
+        if (e && e.target && e.target !== e.currentTarget && !e.target.classList.contains("modal-close-btn")) {
+          return;
+        }
+        const modal = document.getElementById("hw-specs-modal");
+        if (modal) modal.classList.remove("modal-open");
+      };
+
+      // =====================================================================
+      // TASK 1 & 3: LIVE ACTIVE AUDIO HARDWARE BRIDGE LISTENER
+      // =====================================================================
+      window.onAudioDeviceChanged = function(deviceInfoJson) {
+        let info = deviceInfoJson;
+        if (typeof deviceInfoJson === "string") {
+          try {
+            info = JSON.parse(deviceInfoJson);
+          } catch (e) {
+            console.error("Device JSON parse error:", e);
+            return;
+          }
+        }
+        if (!info) return;
+
+        const badge = document.getElementById("hw-device-badge");
+        const badgeText = document.getElementById("hw-device-text");
+        const dspDot = document.getElementById("dsp-status-dot");
+
+        if (badgeText && info.badgeText) {
+          badgeText.textContent = info.badgeText;
+        }
+
+        // TASK 1: USB DAC Neon Border Pulse
+        if (badge) {
+          if (info.routeType === "USB_DAC") {
+            badge.classList.add("usb-dac-pulse");
+          } else {
+            badge.classList.remove("usb-dac-pulse");
+          }
+
+          // Tactile bounce on hardware switch
+          badge.style.transform = "scale(1.08)";
+          setTimeout(function() {
+            badge.style.transform = "scale(1.0)";
+          }, 350);
+        }
+
+        // TASK 3: DSP Activity Status Dot (Green / Yellow / Red)
+        if (dspDot) {
+          dspDot.className = "dsp-status-dot";
+          const status = (info.dspStatus || "").toUpperCase();
+          const route = (info.routeType || "").toUpperCase();
+
+          if (status === "PURE" || route === "WIRED_HEADPHONES" || route === "USB_DAC") {
+            dspDot.classList.add("dsp-dot-pure");
+          } else if (status === "COMPENSATED" || route === "BLUETOOTH_A2DP") {
+            dspDot.classList.add("dsp-dot-compensated");
+          } else {
+            dspDot.classList.add("dsp-dot-limited");
+          }
+        }
+      };
+
+      function initAudioDeviceDetection() {
+        if (typeof window.AndroidBridge !== "undefined" && window.AndroidBridge.getActiveAudioDevice) {
+          try {
+            const rawJson = window.AndroidBridge.getActiveAudioDevice();
+            window.onAudioDeviceChanged(rawJson);
+          } catch (_) {}
+        }
+      }
+
+      function onInstantBoot() {
+        const coverImg = document.getElementById("cover-art-img");
+        if (coverImg && !coverImg.src) {
+          coverImg.src = generateVinylCoverSvg("XP PHONK", "VAULT ULTRA");
+        }
+        window.switchViewMode("songs");
+        loadStrictPhonkLibrary();
+        initAudioDeviceDetection();
+        initSeekbarControls();
+
+        // FIX 3: Start smooth delta-time rotation immediately on boot
+        if (!animId) {
+          animId = requestAnimationFrame(renderFrame);
+        }
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", onInstantBoot);
+      } else {
+        onInstantBoot();
+      }
+    })();
+  </script>
+</body>
+</html>

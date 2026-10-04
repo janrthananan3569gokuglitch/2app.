@@ -1,0 +1,6 @@
+{
+  "name": "XP Music Vault Ultra",
+  "description": "God-tier audiophile native music player with custom DSP audio engine, 10-band parametric equalizer, HRTF 3D spatial audio, real-time FFT visualizer, and secure audio vault.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
